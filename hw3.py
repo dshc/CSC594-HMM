@@ -99,17 +99,19 @@ for sentence in sentences:
         words.append(line.split()[0])
     x_length = len(words)
     y_length = len(tagCounts)
+
+    # create viterbi matrix
     probMatrix = [[0 for x in range(x_length)] for y in range(y_length)]
 
-    index = 0
-    for tag, count in tagCounts.items():
+    tagArr = list(tagCounts.keys())
+    for i in range(len(tagArr)):
+        tag = tagArr[i]
         currTuple = (words[0], tag)
         prob = 0
 
         if currTuple in wordTagProbs and ('start', tag) in tagTagProbs:
             prob = tagTagProbs[('start', tag)] * wordTagProbs[currTuple]
 
-        probMatrix[index][0] = prob
-        index = index + 1
+        probMatrix[i][0] = prob
 
     print(probMatrix)
