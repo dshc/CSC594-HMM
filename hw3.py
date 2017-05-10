@@ -5,6 +5,7 @@ CSC 594 Homework #3
 """
 
 import sys
+import math
 import numpy as np
 
 tagCounts = {}
@@ -75,16 +76,17 @@ parseTrainingText(filename)
 wordTagProbs = {}
 for wordTag, count in wordTagCounts.items():
     tag = wordTag[1]
-    wordTagProbs[wordTag] = count / tagCounts[tag]
+    wordTagProbs[wordTag] = math.log(count / tagCounts[tag])
 
 # Calculate probabilities of tag to tag transitions
 tagTagProbs = {}
 for tagTag, count in tagTagCounts.items():
     firstTag = tagTag[0]
-    tagTagProbs[tagTag] = count / tagCounts[firstTag]
+    tagTagProbs[tagTag] = math.log(count / tagCounts[firstTag])
 
 # Read in the full test file
-testFilePath = "test.txt" if len(sys.argv) == 1 else sys.argv[2]
+testFilePath = "WSJ-test.txt" if len(sys.argv) == 1 else sys.argv[2]
+#testFilePath = "test.txt" if len(sys.argv) == 1 else sys.argv[2]
 TEST_FILE = open(testFilePath, 'r')
 TEST_TEXT = TEST_FILE.read().strip()
 TEST_FILE.close()
@@ -115,10 +117,10 @@ for sentence in sentences:
   for i in range(len(tagArr)):
     tag = tagArr[i]
     currTuple = (words[0], tag)
-    prob = 0
+    prob = float("-inf")
 
     if currTuple in wordTagProbs and ('start', tag) in tagTagProbs:
-      prob = tagTagProbs[('start', tag)] * wordTagProbs[currTuple]
+      prob = tagTagProbs[('start', tag)] + wordTagProbs[currTuple]
 
     probMatrix[i][0] = prob
 
@@ -127,16 +129,16 @@ for sentence in sentences:
       currTup = (words[wordInd], tagArr[currTagInd])
 
       maxProbKy = -1
-      maxProbVal = -1
+      maxProbVal = None
       for priorTagInd in range(len(tagArr)):
         tagTup = (tagArr[priorTagInd], tagArr[currTagInd])
-        prob = 0
+        prob = float("-inf")
 
         if currTup in wordTagProbs and tagTup in tagTagProbs:
-          p = tagTagProbs[tagTup] * wordTagProbs[currTup]
-          prob = p * probMatrix[priorTagInd][wordInd-1]
+          p = tagTagProbs[tagTup] + wordTagProbs[currTup]
+          prob = p + probMatrix[priorTagInd][wordInd-1]
 
-        if prob > maxProbVal:
+        if (maxProbVal == None) or (math.exp(prob) > math.exp(maxProbVal)):
           maxProbVal = prob
           maxProbKy = priorTagInd
 
