@@ -5,6 +5,7 @@ CSC 594 Homework #3
 """
 
 import sys
+import numpy as np
 
 tagCounts = {}
 wordTagCounts = {}
@@ -89,29 +90,74 @@ TEST_TEXT = TEST_FILE.read().strip()
 TEST_FILE.close()
 sentences = TEST_TEXT.split('\n\n')
 
+overallTotal = 0
+overallCorrect = 0
+
 # For each sentence, use the HMM we created from the probabilites
 # and apply the viterbi algorithm to calculate the most likely
 # states for each word in the sentence.
 for sentence in sentences:
-    lines = sentence.strip().split('\n')
-    words = []
-    for line in lines:
-        words.append(line.split()[0])
-    x_length = len(words)
-    y_length = len(tagCounts)
+  lines = sentence.strip().split('\n')
+  words = []
+  tags = []
+  for line in lines:
+    words.append(line.split()[0])
+    tags.append(line.split()[1])
+  x_length = len(words)
+  y_length = len(tagCounts)
 
-    # create viterbi matrix
-    probMatrix = [[0 for x in range(x_length)] for y in range(y_length)]
+  # create viterbi matrix
+  probMatrix = [[0 for x in range(x_length)] for y in range(y_length)]
+  maxPrevIndMatrix = [[0 for x in range(x_length)] for y in range(y_length)]
 
-    tagArr = list(tagCounts.keys())
-    for i in range(len(tagArr)):
-        tag = tagArr[i]
-        currTuple = (words[0], tag)
+  # fill in the first column with probabilities
+  tagArr = list(tagCounts.keys())
+  for i in range(len(tagArr)):
+    tag = tagArr[i]
+    currTuple = (words[0], tag)
+    prob = 0
+
+    if currTuple in wordTagProbs and ('start', tag) in tagTagProbs:
+      prob = tagTagProbs[('start', tag)] * wordTagProbs[currTuple]
+
+    probMatrix[i][0] = prob
+
+  for wordInd in range(1, len(words)):
+    for currTagInd in range(len(tagArr)):
+      currTup = (words[wordInd], tagArr[currTagInd])
+
+      maxProbKy = -1
+      maxProbVal = -1
+      for priorTagInd in range(len(tagArr)):
+        tagTup = (tagArr[priorTagInd], tagArr[currTagInd])
         prob = 0
 
-        if currTuple in wordTagProbs and ('start', tag) in tagTagProbs:
-            prob = tagTagProbs[('start', tag)] * wordTagProbs[currTuple]
+        if currTup in wordTagProbs and tagTup in tagTagProbs:
+          p = tagTagProbs[tagTup] * wordTagProbs[currTup]
+          prob = p * probMatrix[priorTagInd][wordInd-1]
 
-        probMatrix[i][0] = prob
+        if prob > maxProbVal:
+          maxProbVal = prob
+          maxProbKy = priorTagInd
 
-    print(probMatrix)
+      maxPrevIndMatrix[currTagInd][wordInd] = maxProbKy
+      probMatrix[currTagInd][wordInd] = maxProbVal
+
+  a = np.array(probMatrix)
+  maxIndLastCol = np.argmax(a[:,x_length-1])
+  t = [tagArr[maxIndLastCol]]
+  for x in range(x_length-1, 0, -1):
+    maxIndLastCol = maxPrevIndMatrix[maxIndLastCol][x]
+    t.insert(0, tagArr[maxIndLastCol])
+
+  for y in range(len(t)):
+    if t[y] == tags[y]:
+      overallCorrect += 1
+    overallTotal += 1
+
+accuracy = overallCorrect / overallTotal
+print(accuracy)
+
+
+
+
