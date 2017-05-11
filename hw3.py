@@ -96,6 +96,12 @@ sentences = TEST_TEXT.split('\n\n')
 overallTotal = 0
 overallCorrect = 0
 
+#For cases when transitions or word/tag pairs don't exist in the training
+#set, we default to 2 * the minimum probability from the entire set. Since
+#the minimum will always be negative, multiplying by 2 always makes it even lower.
+minTagTagProb = min(tagTagProbs.values()) * 2
+minWordTagProbs = min(wordTagProbs.values()) * 2
+
 # For each sentence, use the HMM we created from the probabilites
 # and apply the viterbi algorithm to calculate the most likely
 # states for each word in the sentence.
@@ -128,11 +134,19 @@ for sentence in sentences:
     # likelihood does not appear in the training data
     prob = float("-inf")
 
+    tagTagProb = minTagTagProb
+    wordTagProb = minWordTagProbs
+
+    if currTuple in wordTagProbs: 
+      wordTagProb = wordTagProbs[currTuple]
+
     # the 'start' tag was included when populating probabilities
-    if currTuple in wordTagProbs and ('start', tag) in tagTagProbs:
-      # the transition for the first column will always include the 'start' tag as the
-      # previous tag.
-      prob = tagTagProbs[('start', tag)] + wordTagProbs[currTuple]
+    # the transition for the first column will always include the 'start' tag as the
+    # previous tag.
+    if ('start', tag) in tagTagProbs:
+      tagTagProb = tagTagProbs[('start', tag)]
+
+    prob = tagTagProb + wordTagProb
 
     # populate an item in the first column of the probability matrix
     probMatrix[i][0] = prob
@@ -158,11 +172,17 @@ for sentence in sentences:
         # the training data
         prob = float("-inf")
 
-        if currTup in wordTagProbs and tagTup in tagTagProbs:
-          # add the transition probability with the state obserevation likelihood
-          p = tagTagProbs[tagTup] + wordTagProbs[currTup]
-          # also include the previous forward path probability
-          prob = p + probMatrix[priorTagInd][wordInd-1]
+        currWordTupProb = minWordTagProbs
+        currTagTup = minTagTagProb
+
+        if currTup in wordTagProbs:
+          currWordTupProb = wordTagProbs[currTup]
+
+        if tagTup in tagTagProbs:
+          currTagTup = tagTagProbs[tagTup]
+        
+        #Add the probabilities and also include the previous forward path probability
+        prob = currWordTupProb + currTagTup + probMatrix[priorTagInd][wordInd-1]
 
         # keep track of the maximum previous forward path probability
         if (maxProbVal == None) or (math.exp(prob) > math.exp(maxProbVal)):
