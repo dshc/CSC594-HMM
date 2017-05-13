@@ -110,11 +110,11 @@ def main(argv):
 	for sentence in sentences:
 		lines = sentence.strip().split('\n')
 		words = []
-		tags = []
+		#tags = []
 		for line in lines:
 			splitLine = line.split()
 			words.append(splitLine[0])
-			tags.append(splitLine[1])
+			#tags.append(splitLine[1])
 		x_length = len(words)
 		y_length = len(tagCounts)
 
@@ -204,20 +204,15 @@ def main(argv):
 			maxIndLastCol = maxPrevIndMatrix[maxIndLastCol][x]
 			t.insert(0, tagArr[maxIndLastCol])
 
-		# calculate the number of correct tag predictions 
-		for y in range(len(t)):
-			if t[y] == tags[y]:
-				overallCorrect += 1
-			overallTotal += 1
 
 		for i in range(len(words)):
-			outputString += words[i] + ' ' + tags[i] + ' ' + t[i] + '\n'
+			outputString += words[i] + ' ' + t[i] + '\n'
 		outputString += '\n'
 
-	accuracy = overallCorrect / overallTotal
+	#accuracy = overallCorrect / overallTotal
 	
-	out = open('output.txt', 'w')
-	out.write('Accuracy:\t'+str(overallCorrect)+'/'+str(overallTotal)+' = '+str(accuracy*100)+'\n\n')
+	out = open('POS output.txt', 'w')
+	#out.write('Accuracy:\t'+str(overallCorrect)+'/'+str(overallTotal)+' = '+str(accuracy*100)+'\n\n')
 	out.write(outputString)
 	out.flush()
 	out.close()
